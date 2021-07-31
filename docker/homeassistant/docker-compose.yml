@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  homeassistant:
+    image: ghcr.io/linuxserver/homeassistant
+    environment: 
+      - PUID=1000
+      - GUID=1000
+      - TZ=Europe/Amsterdam
+    volumes: 
+      - ../../data/homeassistant:/config
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.homeassistant.rule=Host(`${DASHBOARD_URL}`)
+      - traefik.http.routers.homeassistant.entrypoints=https
+      - traefik.http.routers.homeassistant.tls=true
+      - traefik.http.routers.homeassistant.tls.certresolver=letsencrypt
+      - traefik.http.services.homeassistant.loadbalancer.server.port=8123
+    networks:
+      - traefik
+    restart: unless-stopped
+
+networks:
+  traefik:
+    external: true

@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  traefik:
+    image: traefik:latest
+    command:
+      - --entryPoints.http.address=:80
+      - --entryPoints.https.address=:443
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --certificatesResolvers.letsencrypt.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+      - --certificatesResolvers.letsencrypt.acme.email=${LETSENCRYPT_EMAIL}
+      - --certificatesResolvers.letsencrypt.acme.storage=/acme.json
+      - --certificatesResolvers.letsencrypt.acme.tlschallenge=true
+      # - --accesslog
+      # - --log.filePath=/var/log/traefik.log
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../../data/traefik/acme.json:/acme.json
+    labels:
+      - traefik.enable=true
+
+      # Traefik Dashboard
+      - traefik.http.routers.traefik.rule=Host(`${DASHBOARD_URL}`)
+      - traefik.http.routers.traefik.service=api@internal
+      - traefik.http.routers.traefik.tls.certresolver=letsencrypt
+      # - traefik.http.routers.traefik.middlewares=auth
+      - traefik.http.services.traefik.loadbalancer.server.port=8080
+
+      # Redirect all http (port 80) traffic to http (port 443)
+      - traefik.http.routers.http-to-https.rule=hostregexp(`{host:.+}`)
+      - traefik.http.routers.http-to-https.entrypoints=http
+      - traefik.http.routers.http-to-https.middlewares=http-to-https
+
+      # Middleware: http to https
+      - traefik.http.middlewares.http-to-https.redirectscheme.scheme=https
+
+    networks:
+      - traefik
+    restart: unless-stopped
+
+networks:
+  traefik:
+    external: true

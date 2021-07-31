@@ -4,10 +4,21 @@
 Create the required docker networks
 
 ```bash
-docker network create traefik
+docker network create traefik && \
+docker network create mqtt
 ```
 
-#### Docker: Traefik
+### Docker: mqtt
+Create the config file in `./data/mqtt/mosquitto.conf` with the following contents:
+```conf
+persistence true
+persistence_location /mosquitto/data/
+log_dest file /mosquitto/log/mosquitto.log
+listener 1883
+allow_anonymous true
+```
+
+### Docker: Traefik
 Set the enviroment variables in `./docker/traefik/.env`.
 
 Create an empty docker file at `./data/traefik/acme.json` and set the file permissions to `600`.
